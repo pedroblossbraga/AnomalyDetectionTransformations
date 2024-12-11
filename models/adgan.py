@@ -1,9 +1,15 @@
 import numpy as np
 from keras.optimizers import Adam
 from keras.models import Model
-from keras.layers.merge import subtract
-from keras.utils.generic_utils import Progbar
-from keras.engine.topology import Input, Layer
+# from keras.layers.merge import subtract
+from keras.layers import subtract
+
+# from keras.utils.generic_utils import Progbar
+from keras.utils import Progbar
+
+# from keras.engine.topology import Input, Layer
+from keras.layers import Input, Layer
+
 from keras.callbacks import CallbackList
 import keras.backend as K
 
@@ -21,7 +27,9 @@ class GradPenLayer(Layer):
 
 
 def train_wgan_with_grad_penalty(prior_gen, generator, data_gen, critic, batch_size, epochs,
-                                 batches_per_epoch=100, optimizer=Adam(lr=1e-4, beta_1=0, beta_2=0.9),
+                                 batches_per_epoch=100,
+                                 # optimizer=Adam(lr=1e-4, beta_1=0, beta_2=0.9),
+                                 optimizer=Adam(learning_rate=1e-4, beta_1=0, beta_2=0.9),
                                  grad_pen_coef=10., critic_gen_train_ratio=2, callbacks=None):
     # build model to train the critic
     data_shape = critic.input_shape[1:]
@@ -69,8 +77,8 @@ def train_wgan_with_grad_penalty(prior_gen, generator, data_gen, critic, batch_s
     for e in range(epochs):
         print('Epoch {}/{}'.format(e + 1, epochs))
         callbacks.on_epoch_begin(e)
-        progbar = Progbar(target=batches_per_epoch*batch_size)
-        dummy_y = np.array([None]*batch_size)
+        progbar = Progbar(target=batches_per_epoch * batch_size)
+        dummy_y = np.array([None] * batch_size)
         for b in range(batches_per_epoch):
             callbacks.on_batch_begin(b)
             batch_losses = np.zeros(shape=3)
@@ -78,7 +86,7 @@ def train_wgan_with_grad_penalty(prior_gen, generator, data_gen, critic, batch_s
                 real_batch = data_gen(batch_size)
                 fake_batch = generator.predict(prior_gen(batch_size))
                 weights = np.random.uniform(size=batch_size)
-                weights = weights.reshape((-1,) + (1,)*(len(real_batch.shape)-1))
+                weights = weights.reshape((-1,) + (1,) * (len(real_batch.shape) - 1))
                 interp_batch = weights * real_batch + (1. - weights) * fake_batch
 
                 x_batch = {'real_in': real_batch, 'fake_in': fake_batch, 'interp_in': interp_batch}
@@ -91,7 +99,7 @@ def train_wgan_with_grad_penalty(prior_gen, generator, data_gen, critic, batch_s
             progbar.add(batch_size, zip(losses_names, batch_losses))
             callbacks.on_batch_end(b)
 
-        progbar.update(batches_per_epoch*batch_size)
+        progbar.update(batches_per_epoch * batch_size)
         callbacks.on_epoch_end(e)
 
     callbacks.on_train_end()
@@ -104,7 +112,7 @@ def scores_from_adgan_generator(x_test, prior_gen, generator, n_seeds=8, k=5, z_
     gen_opt = Adam(lr=gen_lr, beta_1=0.5)
     z_opt = Adam(lr=z_lr, beta_1=0.5)
 
-    x_ph = K.placeholder((1,)+x_test.shape[1:])
+    x_ph = K.placeholder((1,) + x_test.shape[1:])
     z = K.variable(prior_gen(1))
     rec_loss = K.mean(K.square(x_ph - generator(z)))
     z_train_fn = K.function([x_ph], [rec_loss], updates=z_opt.get_updates(rec_loss, [z]))

@@ -10,8 +10,13 @@ from scipy.special import psi, polygamma
 from sklearn.metrics import roc_auc_score
 from sklearn.svm import OneClassSVM
 from sklearn.model_selection import ParameterGrid
-from sklearn.externals.joblib import Parallel, delayed
-from keras.models import Model, Input, Sequential
+# from sklearn.externals.joblib import Parallel, delayed
+from joblib import Parallel, delayed
+
+# from keras.models import Model, Input, Sequential
+from keras.models import Model, Sequential
+from keras import Input
+
 from keras.layers import Dense, Dropout
 from keras.utils import to_categorical
 from utils import load_cifar10, load_cats_vs_dogs, load_fashion_mnist, load_cifar100
@@ -49,7 +54,7 @@ def _transformations_experiment(dataset_load_fn, dataset_name, single_class_ind,
     batch_size = 128
 
     mdl.fit(x=x_train_task_transformed, y=to_categorical(transformations_inds),
-            batch_size=batch_size, epochs=int(np.ceil(200/transformer.n_transforms))
+            batch_size=batch_size, epochs=int(np.ceil(200 / transformer.n_transforms))
             )
 
     #################################################################################################
@@ -112,14 +117,15 @@ def _transformations_experiment(dataset_load_fn, dataset_name, single_class_ind,
     labels = y_test.flatten() == single_class_ind
 
     res_file_name = '{}_transformations_{}_{}.npz'.format(dataset_name,
-                                                 get_class_name_from_index(single_class_ind, dataset_name),
-                                                 datetime.now().strftime('%Y-%m-%d-%H%M'))
+                                                          get_class_name_from_index(single_class_ind, dataset_name),
+                                                          datetime.now().strftime('%Y-%m-%d-%H%M'))
     res_file_path = os.path.join(RESULTS_DIR, dataset_name, res_file_name)
     save_roc_pr_curve_data(scores, labels, res_file_path)
 
     mdl_weights_name = '{}_transformations_{}_{}_weights.h5'.format(dataset_name,
-                                                           get_class_name_from_index(single_class_ind, dataset_name),
-                                                           datetime.now().strftime('%Y-%m-%d-%H%M'))
+                                                                    get_class_name_from_index(single_class_ind,
+                                                                                              dataset_name),
+                                                                    datetime.now().strftime('%Y-%m-%d-%H%M'))
     mdl_weights_path = os.path.join(RESULTS_DIR, dataset_name, mdl_weights_name)
     mdl.save_weights(mdl_weights_path)
 
@@ -144,7 +150,10 @@ def _raw_ocsvm_experiment(dataset_load_fn, dataset_name, single_class_ind):
     pg = ParameterGrid({'nu': np.linspace(0.1, 0.9, num=9),
                         'gamma': np.logspace(-7, 2, num=10, base=2)})
 
-    results = Parallel(n_jobs=6)(
+    results = Parallel(
+        # n_jobs=6
+        n_jobs=1
+    )(
         delayed(_train_ocsvm_and_score)(d, x_train_task, y_test.flatten() == single_class_ind, x_test)
         for d in pg)
 
@@ -188,7 +197,10 @@ def _cae_ocsvm_experiment(dataset_load_fn, dataset_name, single_class_ind, gpu_q
     pg = ParameterGrid({'nu': np.linspace(0.1, 0.9, num=9),
                         'gamma': np.logspace(-7, 2, num=10, base=2)})
 
-    results = Parallel(n_jobs=6)(
+    results = Parallel(
+        # n_jobs=6
+        n_jobs=1
+    )(
         delayed(_train_ocsvm_and_score)(d, x_train_task_rep, y_test.flatten() == single_class_ind, x_test_rep)
         for d in pg)
 
@@ -263,7 +275,7 @@ def _dagmm_experiment(dataset_load_fn, dataset_name, single_class_ind, gpu_q):
     lambda_diag = 0.0005
     lambda_energy = 0.01
     dagmm_mdl = dagmm.create_dagmm_model(enc, dec, estimation, lambda_diag)
-    dagmm_mdl.compile('adam', ['mse', lambda y_true, y_pred: lambda_energy*y_pred])
+    dagmm_mdl.compile('adam', ['mse', lambda y_true, y_pred: lambda_energy * y_pred])
 
     x_train_task = x_train[y_train.flatten() == single_class_ind]
     x_test_task = x_test[y_test.flatten() == single_class_ind]  # This is just for visual monitoring
@@ -334,8 +346,9 @@ def _adgan_experiment(dataset_load_fn, dataset_name, single_class_ind, gpu_q):
     gpu_q.put(gpu_to_use)
 
 
-def run_experiments(load_dataset_fn, dataset_name, q, n_classes):
-
+def run_experiments(load_dataset_fn, dataset_name, q, n_classes,
+                    n_runs=5
+                    ):
     # CAE OC-SVM
     processes = [Process(target=_cae_ocsvm_experiment,
                          args=(load_dataset_fn, dataset_name, c, q)) for c in range(n_classes)]
@@ -346,8 +359,6 @@ def run_experiments(load_dataset_fn, dataset_name, q, n_classes):
     # Raw OC-SVM
     for c in range(n_classes):
         _raw_ocsvm_experiment(load_dataset_fn, dataset_name, c)
-
-    n_runs = 5
 
     # Transformations
     for _ in range(n_runs):
@@ -407,7 +418,8 @@ def create_auc_table(metric='roc_auc'):
             for method_name in results[ds_name][sc_name]:
                 roc_aucs = results[ds_name][sc_name][method_name]
                 results[ds_name][sc_name][method_name] = [np.mean(roc_aucs),
-                                                          0 if len(roc_aucs) == 1 else scipy.stats.sem(np.array(roc_aucs))
+                                                          0 if len(roc_aucs) == 1 else scipy.stats.sem(
+                                                              np.array(roc_aucs))
                                                           ]
 
     with open('results-{}.csv'.format(metric), 'w') as csvfile:
@@ -440,4 +452,3 @@ if __name__ == '__main__':
 
     for data_load_fn, dataset_name, n_classes in experiments_list:
         run_experiments(data_load_fn, dataset_name, q, n_classes)
-

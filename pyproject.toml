@@ -1,0 +1,21 @@
+[tool.poetry]
+package-mode = false
+name = "anomalydetectiontransformations"
+version = "0.1.0"
+description = ""
+authors = ["Pedro Blöß Braga <50064364+pedroblossbraga@users.noreply.github.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+tensorflow = "^2.18.0"
+numpy = ">=1.26.0,<2.1.0" # Ensures compatibility with tensorflow
+scipy = "^1.14.1"
+scikit-learn = "^1.5.2"
+keras = "^3.6.0"
+opencv-python = "^4.10.0.84"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

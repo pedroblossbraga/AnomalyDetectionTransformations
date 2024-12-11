@@ -4,8 +4,9 @@ import numpy as np
 import cv2
 from sklearn.metrics import roc_curve, precision_recall_curve, auc
 from keras.datasets import mnist, fashion_mnist, cifar100, cifar10
-from keras.backend import cast_to_floatx
-
+# from keras.backend import cast_to_floatx
+# from keras import backend as K
+import tensorflow as tf  # Add this import at the top
 
 def resize_and_crop_image(input_file, output_side_length, greyscale=False):
     img = cv2.imread(input_file)
@@ -41,33 +42,40 @@ def get_channels_axis():
 
 def load_fashion_mnist():
     (X_train, y_train), (X_test, y_test) = fashion_mnist.load_data()
-    X_train = normalize_minus1_1(cast_to_floatx(np.pad(X_train, ((0, 0), (2, 2), (2, 2)), 'constant')))
+    #     X_train = normalize_minus1_1(cast_to_floatx(np.pad(X_train, ((0, 0), (2, 2), (2, 2)), 'constant')))
+    X_train = normalize_minus1_1(tf.cast(np.pad(X_train, ((0, 0), (2, 2), (2, 2)), 'constant'), dtype=tf.float32))
     X_train = np.expand_dims(X_train, axis=get_channels_axis())
-    X_test = normalize_minus1_1(cast_to_floatx(np.pad(X_test, ((0, 0), (2, 2), (2, 2)), 'constant')))
+    #     X_test = normalize_minus1_1(cast_to_floatx(np.pad(X_test, ((0, 0), (2, 2), (2, 2)), 'constant')))
+    X_test = normalize_minus1_1(tf.cast(np.pad(X_test, ((0, 0), (2, 2), (2, 2)), 'constant'), dtype=tf.float32))
     X_test = np.expand_dims(X_test, axis=get_channels_axis())
     return (X_train, y_train), (X_test, y_test)
 
-
 def load_mnist():
     (X_train, y_train), (X_test, y_test) = mnist.load_data()
-    X_train = normalize_minus1_1(cast_to_floatx(np.pad(X_train, ((0, 0), (2, 2), (2, 2)), 'constant')))
+    # X_train = normalize_minus1_1(cast_to_floatx(np.pad(X_train, ((0, 0), (2, 2), (2, 2)), 'constant')))
+    X_train = normalize_minus1_1(tf.cast(np.pad(X_train, ((0, 0), (2, 2), (2, 2)), 'constant'), dtype=tf.float32))
     X_train = np.expand_dims(X_train, axis=get_channels_axis())
-    X_test = normalize_minus1_1(cast_to_floatx(np.pad(X_test, ((0, 0), (2, 2), (2, 2)), 'constant')))
+    #X_test = normalize_minus1_1(cast_to_floatx(np.pad(X_test, ((0, 0), (2, 2), (2, 2)), 'constant')))
+    X_test = normalize_minus1_1(tf.cast(np.pad(X_test, ((0, 0), (2, 2), (2, 2)), 'constant'), dtype=tf.float32))
     X_test = np.expand_dims(X_test, axis=get_channels_axis())
     return (X_train, y_train), (X_test, y_test)
 
 
 def load_cifar10():
     (X_train, y_train), (X_test, y_test) = cifar10.load_data()
-    X_train = normalize_minus1_1(cast_to_floatx(X_train))
-    X_test = normalize_minus1_1(cast_to_floatx(X_test))
+    # X_train = normalize_minus1_1(cast_to_floatx(X_train))
+    # X_test = normalize_minus1_1(cast_to_floatx(X_test))
+    X_train = normalize_minus1_1(tf.cast(X_train, dtype=tf.float32))
+    X_test = normalize_minus1_1(tf.cast(X_test, dtype=tf.float32))
     return (X_train, y_train), (X_test, y_test)
 
 
 def load_cifar100(label_mode='coarse'):
     (X_train, y_train), (X_test, y_test) = cifar100.load_data(label_mode=label_mode)
-    X_train = normalize_minus1_1(cast_to_floatx(X_train))
-    X_test = normalize_minus1_1(cast_to_floatx(X_test))
+    # X_train = normalize_minus1_1(cast_to_floatx(X_train))
+    # X_test = normalize_minus1_1(cast_to_floatx(X_test))
+    X_train = normalize_minus1_1(tf.cast(X_train, dtype=tf.float32))
+    X_test = normalize_minus1_1(tf.cast(X_test, dtype=tf.float32))
     return (X_train, y_train), (X_test, y_test)
 
 
@@ -123,9 +131,11 @@ def create_cats_vs_dogs_npz(cats_vs_dogs_path='./'):
 
 def load_cats_vs_dogs(cats_vs_dogs_path='./'):
     npz_file = np.load(os.path.join(cats_vs_dogs_path, 'cats_vs_dogs.npz'))
-    x_train = normalize_minus1_1(cast_to_floatx(npz_file['x_train']))
+    # x_train = normalize_minus1_1(cast_to_floatx(npz_file['x_train']))
+    x_train = normalize_minus1_1(tf.cast(npz_file['x_train'], dtype=tf.float32))
     y_train = npz_file['y_train']
-    x_test = normalize_minus1_1(cast_to_floatx(npz_file['x_test']))
+    # x_test = normalize_minus1_1(cast_to_floatx(npz_file['x_test']))
+    x_test = normalize_minus1_1(tf.cast(npz_file['x_test'], dtype=tf.float32))
     y_test = npz_file['y_test']
 
     return (x_train, y_train), (x_test, y_test)

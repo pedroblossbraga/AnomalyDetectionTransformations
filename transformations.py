@@ -2,8 +2,22 @@ import abc
 import itertools
 import numpy as np
 
-from keras.preprocessing.image import apply_affine_transform
+# from keras.preprocessing.image import apply_affine_transform
+import tensorflow as tf
+# import numpy as np
 
+def apply_affine_transform(image, theta=0, tx=0, ty=0, shear=0, zx=1, zy=1):
+    # Define the transformation matrix
+    transformation_matrix = tf.keras.preprocessing.image.affine_transform(
+        np.array(image),
+        theta=theta,
+        tx=tx,
+        ty=ty,
+        shear=shear,
+        zx=zx,
+        zy=zy
+    )
+    return transformation_matrix
 
 class AffineTransformation(object):
     def __init__(self, flip, tx, ty, k_90_rotate):

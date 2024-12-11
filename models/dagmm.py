@@ -1,5 +1,7 @@
 import numpy as np
-from keras.models import Input, Model
+# from keras.models import Input, Model
+from keras import Input, Model
+
 from keras.layers import concatenate, Lambda, Layer, add
 import keras.backend as K
 import tensorflow as tf

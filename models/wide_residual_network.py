@@ -1,16 +1,32 @@
 from keras.models import Model
 from keras.layers import *
 from keras.regularizers import l2
-from keras.initializers import _compute_fans
+# from keras.initializers import _compute_fans
 from keras.optimizers import SGD
 from keras import backend as K
+
+import numpy as np
+
+def compute_fans(shape):
+    """Computes the number of input and output units for weight initialization."""
+    if len(shape) < 1:
+        fan_in = fan_out = 1
+    elif len(shape) == 1:
+        fan_in = fan_out = shape[0]
+    elif len(shape) == 2:
+        fan_in, fan_out = shape
+    else:
+        receptive_field_size = np.prod(shape[:-2])
+        fan_in = shape[-2] * receptive_field_size
+        fan_out = shape[-1] * receptive_field_size
+    return fan_in, fan_out
 
 
 WEIGHT_DECAY = 0.5 * 0.0005
 
 
 class SGDTorch(SGD):
-    @interfaces.legacy_get_updates_support
+    # @interfaces.legacy_get_updates_support
     def get_updates(self, loss, params):
         grads = self.get_gradients(loss, params)
         self.updates = [K.update_add(self.iterations, 1)]
